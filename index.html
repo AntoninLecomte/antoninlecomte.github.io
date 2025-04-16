@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Visionneuse</title>
+
+  <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+	<div id="particles-js"></div>
+	<script src="particles.js"></script>
+
+	<div id="ProgressBar"></div>
+	<div id="NavWindow">
+		<div id="NavButtons">
+			<div id="PreviousButton" class="Button"><p class="ButtonP">⯬</p></div>
+			<div id="PlayPauseButton" class="Button"><p class="ButtonP"></p></div>
+			<div id="NextButton" class="Button"><p class="ButtonP">⯮</p></div>
+		</div>
+		<div id="NavTextDiv">
+			<p id="NavText"></p>
+		</div>
+	</div>
+
+	<div id="BPMIndicator">
+		<div id="BPMIndicatorRing"></div>
+		<div id="BPMIndicatorHeart"></div>
+	</div>
+
+
+	<p id="CurrentRow">Cliquer pour choisir une histoire...</p>
+	<input type="file" id="FileInput" name="Fichier" accept="text/txt" />
+
+	<script src="script.js"></script>
+</body>
+
+</html>
