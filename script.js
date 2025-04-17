@@ -126,7 +126,7 @@ class Reader{
 		reader.setRowIndex(0);
 		// Particles:
 		if (particles_enable){
-			particlesJS.load('particles-js', 'particles.json');
+			window.particlesJS('particles-js', particles_params);
 		}
 		reader.runBPM();
 	}
