@@ -1,15 +1,25 @@
-readSpeed = 180; // words per minute
-minimumTime = 3; // seconds
+const readSpeed = 180; // words per minute
+const minimumTime = 3; // seconds
 
-hideButtonsDelay = 3; // seconds
+const hideButtonsDelay = 3; // seconds
 
-particles_enable = true;
-particlesBPM_min = 15; // BPM
-particlesBPM_max = 120; // BPM
-particlesBPM_beatDuration = 400; // ms
-particlesBPM_speed = 5; // Particles js
+const particles_enable = true;
+const particles_baseSpeed = 0.1;
+const particles_baseSize = 1;
 
-fileInput =  document.querySelector('#FileInput');
+
+const BPM_min = 15; // BPM
+const BPM_max = 120; // BPM
+const BPM_beatDuration = 400; // ms
+const BPM_particleSpeed = 3; // Particles js
+const BPM_particlesSize = 3;
+
+const climbMax_duration = 5000; // ms
+const climbMax_particleSpeed = 15; // Particles js
+const climbMax_particlesSize = 4;
+const climbMax_smoothSteps = 10;
+
+const fileInput =  document.querySelector('#FileInput');
 
 fileInput.addEventListener("change", (evt) => {
 	// Executed when a file is selected from the file input
@@ -31,6 +41,7 @@ class Reader{
 	// Store every UI functions
 	constructor(){
 		this.rowList = [];
+		this.BPM_keyframes = [];
 		this.index = 0;
 		this.playStatus = false;
 		this.playTimeout = null;
@@ -38,7 +49,8 @@ class Reader{
 		this.buttonsShowed = true;
 		this.hideButtonsTimeout = null;
 
-		this.currentBPM = particlesBPM_min;
+		this.currentBPM = BPM_min;
+		this.climbMaxStatus = 0;
 
 		this.rowP = document.querySelector('#CurrentRow');
 		this.navText = document.querySelector('#NavText');
@@ -46,38 +58,75 @@ class Reader{
 		this.progressBar.style.width = '0vw';
 
 		this.BPMHeart = document.querySelector('#BPMIndicatorHeart');
-		this.BPMHeart.style.transition='width '+particlesBPM_beatDuration/2+'ms, height '+particlesBPM_beatDuration/2+'ms';
+		this.BPMHeart.style.transition='width '+BPM_beatDuration/2+'ms, height '+BPM_beatDuration/2+'ms';
 		this.BPMRing = document.querySelector('#BPMIndicatorRing');
 	}
 	addRow(rowText){
 		// Add a row to the list from raw text
 		var newRow = {};
-		
-		newRow['text'] = rowText;
-		if (!rowText.includes('{time')){
-			var newTime = rowText.split(' ').length/readSpeed*60;
-			if (newTime < minimumTime){
-				newTime = minimumTime
-			}
-			newRow['time'] = newTime;
+
+		// Default time:
+		var newTime = rowText.split(' ').length/readSpeed*60;
+		if (newTime < minimumTime){
+			newTime = minimumTime
 		}
-		else{
+		newRow['time'] = newTime;
+		
+		// Custom time:
+		if (rowText.includes('{time')){
 			newRow['time'] = parseInt(rowText.split('=')[1].split('}')[0]);
-			
-			newRow['text'] = rowText.split('}')[1];
+			rowText = rowText.replaceAll('{time='+newRow['time']+'}','');
 		}
 
+		// Custom BPM:
+		if (rowText.includes('{bpm')){
+			const newBPM = rowText.split('=')[1].split('}')[0];
+			reader.BPM_keyframes.push([
+				reader.rowList.length-1,
+				parseInt(newBPM)
+			]);
+			rowText = rowText.replaceAll('{bpm='+newBPM+'}','');
+		}
+
+		// Climbmax:
+		newRow['climbmax'] = false;
+		if (rowText.includes('{climbmax}')){
+			newRow['climbmax'] = true;
+			rowText = rowText.replaceAll('{climbmax}','');
+		}
+
+		// Add text and create row:
+		newRow['text'] = rowText;
 		this.rowList.push(newRow);
 	}
+	generateBPMinterpolation(){
+		// Generate BPM per row based on previously loaded {BPM=} values
+		var interpolatedBPM = BPM_min;
+		var nextKeyIndex=-1;
+		var nextKeyPosition = -1;
+		var nextKeyValue = 0;
+		for (var i=0; i<reader.rowList.length;i++){
+			while (nextKeyPosition<i){
+				nextKeyIndex += 1;
+				nextKeyPosition = reader.BPM_keyframes[nextKeyIndex][0]+2;
+				nextKeyValue = reader.BPM_keyframes[nextKeyIndex][1];
+			}
+			if (interpolatedBPM != nextKeyValue){
+				interpolatedBPM += (nextKeyValue - interpolatedBPM)/(nextKeyPosition-i)
+			}
+			
+			reader.rowList[i]['BPM'] = interpolatedBPM;
+		}
+	}
 	fileLoaded(){
+		reader.generateBPMinterpolation();
+
 		document.querySelector('#FileInput').remove();
 		reader.pause();
 		reader.setRowIndex(0);
 		// Particles:
 		if (particles_enable){
-			particlesJS.load('particles-js', 'particles.json', function() {
-				console.log('Particles.js config loaded');
-			});
+			particlesJS.load('particles-js', 'particles.json');
 		}
 		reader.runBPM();
 	}
@@ -133,8 +182,23 @@ class Reader{
 		// Update main row:
 		reader.rowP.innerHTML = this.rowList[index]['text'];
 
+		// Update BPM
+		reader.currentBPM = this.rowList[index]['BPM'];
+
 		// Update nav text
 		reader.navText.innerHTML = (index+1)+"/"+this.rowList.length;
+
+		// Reset climbmax if fired at previous step
+		if (reader.climbMaxStatus == 2){
+			reader.climbMaxStatus = 0;
+		}
+		// Trigger climbmax if required
+		if (reader.rowList[index]['climbmax']){
+			if (reader.rowList[index]['time']*1000 < climbMax_duration){
+				reader.rowList[index]['time'] = (climbMax_duration/1000+BPM_beatDuration/1000)*1.5;
+			}
+			reader.climbMaxStatus = 1;
+		}
 
 		if (reader.playStatus){
 			// Set timer for next one
@@ -167,47 +231,93 @@ class Reader{
 	}
 
 	runBPM(){
+		if (reader.climbMaxStatus == 0){ // No climbmax in progress or scheduled
+			if (reader.playStatus){
+				if (reader.currentBPM > 0){
+					// Particles
+					if (particles_enable){
+						// Force particles to show a beat
+						pJSDom[0].pJS.particles.size.value = BPM_particlesSize*(reader.currentBPM-BPM_min)/(BPM_max-BPM_min);
+						pJSDom[0].pJS.particles.move.speed = BPM_particleSpeed*(reader.currentBPM-BPM_min)/(BPM_max-BPM_min);
+
+						setTimeout(function(){
+							pJSDom[0].pJS.particles.size.value = particles_baseSize;
+							pJSDom[0].pJS.particles.move.speed = particles_baseSpeed;
+						},BPM_beatDuration);
+					}
+
+					// BPM indicator
+					reader.BPMHeart.style.width = '10%';
+					reader.BPMHeart.style.height = '10%';
+
+					reader.BPMRing.style.width = '100%';
+					reader.BPMRing.style.height = '100%';
+					reader.BPMRing.style.opacity = '0.1';
+					reader.BPMRing.style.transition='width '+BPM_beatDuration+'ms, height '+BPM_beatDuration+'ms, opacity '+BPM_beatDuration+'ms';
+
+
+					setTimeout(function(){
+						reader.BPMHeart.style.width = '20%';
+						reader.BPMHeart.style.height = '20%';
+					},BPM_beatDuration/2);
+
+					setTimeout(function(){
+						reader.BPMRing.style.transition='';
+						reader.BPMRing.style.width = '15%';
+						reader.BPMRing.style.height = '15%';
+						reader.BPMRing.style.opacity = '1';
+					},BPM_beatDuration);
+				}
+			}
+			
+		}
+		if (reader.climbMaxStatus == 1){ // Climbmax was scheduled
+			reader.runClimbMax();
+		}
+		if (reader.climbMaxStatus == 2){ // Climbmax is in progress
+			null;
+		}
+		// Schedule next occurences
+		if (reader.currentBPM > 0){
+			setTimeout(reader.runBPM, 60/reader.currentBPM*1000);
+		}
+		else{
+			setTimeout(reader.runBPM, 1000); // Wait for return of BPM
+		}
+	}
+	runClimbMax(){
+		// Similar to BPM, but intense and longer
+		
 		if (reader.playStatus){
+			reader.climbMaxStatus = 2; // Defuse next iteration of runBPM to avoid multiple climbmaxs
 			// Particles
 			if (particles_enable){
 				// Force particles to show a beat
-				pJSDom[0].pJS.particles.size.value = 3*(reader.currentBPM-particlesBPM_min)/(particlesBPM_max-particlesBPM_min);
-				pJSDom[0].pJS.particles.size.anim.size_min = 1;
-				pJSDom[0].pJS.particles.move.speed = 0.5;
-				// setTimeout(function(ratio){
-				// 	pJSDom[0].pJS.particles.move.speed = -particlesBPM_speed;
-				// },particlesBPM_beatDuration/2);
-				setTimeout(function(ratio){
-					pJSDom[0].pJS.particles.size.value = 1;
-					pJSDom[0].pJS.particles.size.anim.size_min = 1;
-					pJSDom[0].pJS.particles.move.speed = 0.1;
-				},particlesBPM_beatDuration);
+
+				pJSDom[0].pJS.particles.size.value = climbMax_particlesSize;
+				pJSDom[0].pJS.particles.move.speed = climbMax_particleSpeed;
+				
+				for (var i=0; i<climbMax_smoothSteps;i++){
+					setTimeout(function(i){
+						pJSDom[0].pJS.particles.size.value = climbMax_particlesSize - (climbMax_particlesSize-particles_baseSize)*(i/(climbMax_smoothSteps-1));
+						pJSDom[0].pJS.particles.move.speed = climbMax_particleSpeed - (climbMax_particleSpeed-particles_baseSpeed*2)*Math.pow(i/(climbMax_smoothSteps-1),1/3);
+					},climbMax_duration*i/(climbMax_smoothSteps-1),i);
+				}
 			}
 
 			// BPM indicator
-			reader.BPMHeart.style.width = '10%';
-			reader.BPMHeart.style.height = '10%';
-
-			reader.BPMRing.style.width = '100%';
-			reader.BPMRing.style.height = '100%';
+			reader.BPMRing.style.width = '200%';
+			reader.BPMRing.style.height = '200%';
 			reader.BPMRing.style.opacity = '0.1';
-			reader.BPMRing.style.transition='width '+particlesBPM_beatDuration+'ms, height '+particlesBPM_beatDuration+'ms, opacity '+particlesBPM_beatDuration+'ms';
-
-
-			setTimeout(function(){
-				reader.BPMHeart.style.width = '20%';
-				reader.BPMHeart.style.height = '20%';
-			},particlesBPM_beatDuration/2);
+			reader.BPMRing.style.transition='width '+climbMax_duration+'ms, height '+climbMax_duration+'ms, opacity '+climbMax_duration+'ms';
 
 			setTimeout(function(){
 				reader.BPMRing.style.transition='';
 				reader.BPMRing.style.width = '15%';
 				reader.BPMRing.style.height = '15%';
 				reader.BPMRing.style.opacity = '1';
-			},particlesBPM_beatDuration);
+			},climbMax_duration);
 		}
-		// Schedule next occurences
-		setTimeout(reader.runBPM, 60/reader.currentBPM*1000)
 	}
 }
 
@@ -265,14 +375,16 @@ document.body.addEventListener('click',function(ev){
 const reader = new Reader();
 // reader.addRow("Exemple 1")
 // reader.addRow("Exemple 2 vraiment vraiment vraiment très long, et à rallonge, et rallongé jusqu'à l'infini de l'inifini")
-// reader.addRow("{time=30}3Très court mais très long")
+// reader.addRow("{time=1}3Très court mais très long")
 // reader.addRow("Ok")
 // reader.addRow("Un autre essai")
 // reader.addRow("Une autre")
-// reader.addRow("{time=10}Seulement 10s")
-// reader.addRow("On approche de la fin")
-// reader.addRow("Très proche")
+// reader.addRow("{time=1}Seulement 10s")
+// reader.addRow("{BPM=100}On approche de la fin")
+// reader.addRow("{climbMax}Très proche")
 // reader.addRow("C'est la dernière")
+// reader.addRow("{BPM=0}Fin")
+// reader.fileLoaded();
 
 
 // Initialisation:
