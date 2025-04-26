@@ -19,8 +19,9 @@ const climbMax_particleSpeed = 15; // Particles js
 const climbMax_particlesSize = 4;
 const climbMax_smoothSteps = 10;
 
+// Manage file loading:
+// Manual selection
 const fileInput =  document.querySelector('#FileInput');
-
 fileInput.addEventListener("change", (evt) => {
 	// Executed when a file is selected from the file input
 	if (fileInput.files.length == 1) {
@@ -129,6 +130,7 @@ class Reader{
 			window.particlesJS('particles-js', particles_params);
 		}
 		reader.runBPM();
+		document.body.requestFullscreen();
 	}
 	play(){
 		// Play the sequence of rows
@@ -373,18 +375,6 @@ document.body.addEventListener('click',function(ev){
 
 // Debug
 const reader = new Reader();
-// reader.addRow("Exemple 1")
-// reader.addRow("Exemple 2 vraiment vraiment vraiment très long, et à rallonge, et rallongé jusqu'à l'infini de l'inifini")
-// reader.addRow("{time=1}3Très court mais très long")
-// reader.addRow("Ok")
-// reader.addRow("Un autre essai")
-// reader.addRow("Une autre")
-// reader.addRow("{time=1}Seulement 10s")
-// reader.addRow("{BPM=100}On approche de la fin")
-// reader.addRow("{climbMax}Très proche")
-// reader.addRow("C'est la dernière")
-// reader.addRow("{BPM=0}Fin")
-// reader.fileLoaded();
 
 
 // Initialisation:

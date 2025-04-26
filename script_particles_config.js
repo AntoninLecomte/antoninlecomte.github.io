@@ -54,7 +54,7 @@ particles_params = {
 	  },
 	  "move": {
 		"enable": true,
-		"speed": 0.05,
+		"speed": 0.1,
 		"direction": "none",
 		"random": true,
 		"straight": false,
