@@ -274,8 +274,8 @@ class Reader{
 
 					setTimeout(function(){
 						reader.BPMRing.style.transition='';
-						reader.BPMRing.style.width = '15%';
-						reader.BPMRing.style.height = '15%';
+						reader.BPMRing.style.width = '10%';
+						reader.BPMRing.style.height = '10%';
 						reader.BPMRing.style.opacity = '1';
 					},BPM_beatDuration);
 				}

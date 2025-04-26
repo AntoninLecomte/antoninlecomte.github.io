@@ -11,7 +11,13 @@
 <body>
 	<div id="particles-js"></div>
 
-	<div id="ProgressBar"></div>
+	<div id="BPMIndicator">
+		<div id="BPMIndicatorRing"></div>
+		<div id="BPMIndicatorHeart"></div>
+	</div>
+
+	<p id="CurrentRow">Cliquer pour choisir une histoire...</p>
+
 	<div id="NavWindow">
 		<div id="NavButtons">
 			<div id="PreviousButton" class="Button"><p class="ButtonP">◀</p></div>
@@ -23,13 +29,10 @@
 		</div>
 	</div>
 
-	<div id="BPMIndicator">
-		<div id="BPMIndicatorRing"></div>
-		<div id="BPMIndicatorHeart"></div>
-	</div>
+	<div id="ProgressBar"></div>
 
 
-	<p id="CurrentRow">Cliquer pour choisir une histoire...</p>
+	
 	<input type="file" id="FileInput" name="Fichier" accept="text/txt" />
 
 	<script src="particles.js"></script>

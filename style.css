@@ -19,7 +19,7 @@ body{
 
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
+	justify-content: space-between;
 	align-items: center;
 
 	user-select: none;
@@ -48,8 +48,7 @@ body{
 	border: 1px solid gray;
 	border-radius: 1vh;
 
-	position: absolute;
-	bottom: 4vh;
+	margin-bottom: 4vh;
 
 	padding-top: 1vh;
 	padding-bottom: 1vh;
@@ -98,6 +97,7 @@ body{
 
 #particles-js{
 	position: absolute;
+	z-index: -1;
 	top: 0;
 	left: 0;
 
@@ -110,10 +110,10 @@ body{
 }
 
 #BPMIndicator{
-	position: absolute;
-	top: 10vh;
-	width: 12vh;
-	height: 12vh;
+	position: relative;
+	margin-top: 10vh;
+	width: 6vw;
+	height: 6vw;
 
 	border-radius: 10vh;
 	background-color: rgba(0,0,0,1);
