@@ -140,6 +140,8 @@ class Reader{
 		// Update button:
 		document.querySelector('#PlayPauseButton').querySelector('p').innerHTML = "⏸";
 		reader.hideButtons();
+		// Disable sleep on mobile:
+		noSleep.enable();
 	}
 	pause(){
 		// Interrupts rows display sequence
@@ -153,6 +155,8 @@ class Reader{
 		reader.progressBar.style.width = '0vw';
 		// Update button:
 		document.querySelector('#PlayPauseButton').querySelector('p').innerHTML = "▶";
+		// Enable sleep on mobile:
+		noSleep.disable();
 	}
 	hideButtons(){
 		// Hide bottom UI buttons
@@ -373,9 +377,9 @@ document.body.addEventListener('click',function(ev){
 	}
 },true);
 
-// Debug
-const reader = new Reader();
-
+// No sleep manager:
+const noSleep = new NoSleep();
 
 // Initialisation:
+const reader = new Reader();
 reader.resetButtonsHideDelay();

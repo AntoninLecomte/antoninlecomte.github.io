@@ -27,7 +27,7 @@ body{
 #CurrentRow{
 	width: 80%;
 	text-align: center;
-	font-size: 3vh;
+	font-size: x-large;
 
 	transition: opacity 1s linear;
 }
@@ -62,8 +62,6 @@ body{
 	display: flex;
 }
 .Button{
-	width: 5vh;
-	height: 5vh;
 	margin-left: 1vw;
 	margin-right: 1vw;
 
@@ -75,7 +73,8 @@ body{
 	align-items: center;
 }
 .ButtonP{
-	font-size: 2.5vh;
+	margin: 1vh;
+	font-size: medium;
 	text-align: center;
 }
 
