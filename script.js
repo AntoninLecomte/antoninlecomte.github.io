@@ -140,8 +140,13 @@ class Reader{
 		// Update button:
 		document.querySelector('#PlayPauseButton').querySelector('p').innerHTML = "⏸";
 		reader.hideButtons();
+
 		// Disable sleep on mobile:
-		noSleep.enable();
+		document.body.addEventListener('click', function enableNoSleep() {
+			document.body.removeEventListener('click', enableNoSleep, false);
+			noSleep.enable();
+		}, false);
+		document.body.click;
 	}
 	pause(){
 		// Interrupts rows display sequence
@@ -376,6 +381,13 @@ document.body.addEventListener('click',function(ev){
 		reader.resetButtonsHideDelay();
 	}
 },true);
+
+// Respawn particles when resizing:
+window.addEventListener('resize', function(){
+	if (pJSDom[0] != undefined){
+		pJSDom[0].pJS.fn.particlesRefresh();
+	}
+});
 
 // No sleep manager:
 const noSleep = new NoSleep();
